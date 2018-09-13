@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -38,6 +39,7 @@ public class FdActivity extends CheckPermissionsActivity implements CvCameraView
     private MenuItem               mItemFace30;
     private MenuItem               mItemFace20;
     private MenuItem               mItemType;
+    private MenuItem   mItemCameraType;
 
     private Mat                    mRgba;
     private Mat                    mGray;
@@ -47,6 +49,7 @@ public class FdActivity extends CheckPermissionsActivity implements CvCameraView
 
     private int                    mDetectorType       = JAVA_DETECTOR;
     private String[]               mDetectorName;
+    private String[] mCameraSel;
 
     private float                  mRelativeFaceSize   = 0.2f;
     private int                    mAbsoluteFaceSize   = 0;
@@ -105,9 +108,12 @@ public class FdActivity extends CheckPermissionsActivity implements CvCameraView
 
     public FdActivity() {
         mDetectorName = new String[2];
+        mCameraSel = new String[2];
         mDetectorName[JAVA_DETECTOR] = "Java";
         mDetectorName[NATIVE_DETECTOR] = "Native (tracking)";
 
+        mCameraSel[0] = "Front";
+        mCameraSel[1] = "Back";
         Log.i(TAG, "Instantiated new " + this.getClass());
     }
 
@@ -122,6 +128,7 @@ public class FdActivity extends CheckPermissionsActivity implements CvCameraView
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
         mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
+        //mOpenCvCameraView.setCameraIndex(CameraBridgeViewBase.CAMERA_ID_FRONT);
         mOpenCvCameraView.setCvCameraViewListener(this);
     }
 
@@ -194,6 +201,14 @@ public class FdActivity extends CheckPermissionsActivity implements CvCameraView
             Imgproc.rectangle(mRgba, facesArray[i].tl(), facesArray[i].br(), FACE_RECT_COLOR, 3);
 
         return mRgba;
+/*
+        sobel = cvCreateImage(cvGetSize(grayScale), IPL_DEPTH_16S,1);
+
+        cvSobel(grayScale, sobel, 2, 0, 7);
+
+        IplImage* temp = cvCreateImage(cvGetSize(sobel), IPL_DEPTH_8U,1);
+
+        cvConvertScale(sobel, temp, 0.00390625, 0);*/
     }
 
     @Override
@@ -204,6 +219,7 @@ public class FdActivity extends CheckPermissionsActivity implements CvCameraView
         mItemFace30 = menu.add("Face size 30%");
         mItemFace20 = menu.add("Face size 20%");
         mItemType   = menu.add(mDetectorName[mDetectorType]);
+        mItemCameraType = menu.add(mCameraSel[0]);
         return true;
     }
 
@@ -222,6 +238,14 @@ public class FdActivity extends CheckPermissionsActivity implements CvCameraView
             int tmpDetectorType = (mDetectorType + 1) % mDetectorName.length;
             item.setTitle(mDetectorName[tmpDetectorType]);
             setDetectorType(tmpDetectorType);
+        }
+        else if (item == mItemCameraType){
+            if (mOpenCvCameraView != null)
+                mOpenCvCameraView.disableView();
+            mOpenCvCameraView.setCameraIndex(CameraBridgeViewBase.CAMERA_ID_FRONT);
+            mOpenCvCameraView.setCvCameraViewListener(this);
+            mOpenCvCameraView.enableView();
+            Toast.makeText(getApplicationContext(),"设置成前镜头",Toast.LENGTH_SHORT).show();
         }
         return true;
     }
